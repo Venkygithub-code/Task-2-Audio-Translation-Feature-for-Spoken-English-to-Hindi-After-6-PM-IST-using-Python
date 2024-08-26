@@ -1,0 +1,68 @@
+import tkinter as tk
+from tkinter import messagebox
+import speech_recognition as sr
+from googletrans import Translator
+import datetime
+
+# Function to check if the current time is after 6 PM IST
+def is_after_6pm():
+    current_time = datetime.datetime.now().time()
+    return current_time >= datetime.time(18, 0)
+
+# Function to capture and translate speech
+def translate_audio():
+    if not is_after_6pm():
+        messagebox.showwarning("Access Denied", "Audio translation is only available after 6 PM IST.")
+        return
+
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        status_label.config(text="Listening...", fg="#4CAF50")  # Green
+        root.update()
+        try:
+            audio = recognizer.listen(source, timeout=5)
+            status_label.config(text="Processing...", fg="#FFC107")  # Amber
+            root.update()
+            spoken_text = recognizer.recognize_google(audio, language="en-IN")
+            translated_text = translator.translate(spoken_text, dest='hi').text
+            output_text.config(state=tk.NORMAL)  # Enable text widget for editing
+            output_text.delete(1.0, tk.END)
+            output_text.insert(tk.END, translated_text)
+            output_text.config(state=tk.DISABLED)  # Disable text widget for editing
+            status_label.config(text="Translation complete", fg="#2196F3")  # Blue
+        except sr.UnknownValueError:
+            messagebox.showerror("Error", "Could not understand the audio. Please try again.")
+        except sr.RequestError:
+            messagebox.showerror("Error", "Could not request results; check your network connection.")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
+# Initialize the main window
+root = tk.Tk()
+root.geometry("700x500")
+root.resizable(0, 0)
+root.config(bg='#2C3E50')  # Dark gray
+root.title('Audio Translator to Hindi')
+
+translator = Translator()
+
+# Title Label
+title_label = tk.Label(root, text="Audio Translator", font="Helvetica 24 bold", bg='#3498DB', fg="white")
+title_label.pack(pady=20, fill=tk.X)
+
+# Status Label
+status_label = tk.Label(root, text="Click 'Translate' to start", font="Helvetica 16", bg='#2C3E50', fg="white")
+status_label.pack(pady=10)
+
+# Output Text Box
+output_text = tk.Text(root, font='Helvetica 16', height=8, wrap=tk.WORD, padx=10, pady=10, bg='#ECF0F1', fg='#2C3E50')
+output_text.pack(pady=10, fill=tk.BOTH, expand=True)
+output_text.config(state=tk.DISABLED)  # Initially disabled
+
+# Translate Button
+translate_btn = tk.Button(root, text='Translate', font='Helvetica 16 bold', pady=10, command=translate_audio,
+                          bg='#E74C3C', fg='white')
+translate_btn.pack(pady=10)
+
+# Main loop
+root.mainloop()
